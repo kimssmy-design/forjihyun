@@ -56,6 +56,13 @@
         <div class="seg" id="themeSeg"></div>
       </div>
       <label class="check"><input type="checkbox" id="sSeason"> 계절 장 넣기 (봄·여름·가을·겨울)</label>
+      <label class="check"><input type="checkbox" id="sCaps"> 사진마다 응원 문구 넣기</label>
+      <details class="caps">
+        <summary>응원 문구 고치기</summary>
+        <textarea id="capsText" rows="8"></textarea>
+        <p class="hint">한 줄에 하나씩 써요. 사진이 바뀔 때마다 돌아가며 나와요.<br>{이름} → 서아·하늘, {이름이} → 서아·하늘이, {이름아} → 서아야·하늘아</p>
+        <button type="button" id="capsReset" class="btn small">기본 문구로 되돌리기</button>
+      </details>
 
       <div class="field">
         <label>사진 한 장 시간</label>
@@ -80,7 +87,10 @@
     <section class="card">
       <div class="sec-head">
         <h2>아이 목록 <span id="doneCount" class="count"></span></h2>
-        <button type="button" id="addChildBtn" class="chip">+ 아이 추가</button>
+        <div class="sec-tools">
+          <button type="button" id="clearAllBtn" class="link danger">전체 지우기</button>
+          <button type="button" id="addChildBtn" class="chip">+ 아이 추가</button>
+        </div>
       </div>
       <div id="childChips" class="chips"></div>
     </section>
@@ -171,6 +181,27 @@
   </div>
 </div>
 
+<!-- 확인 창 (지우기 등) -->
+<div class="sheet" id="askSheet" hidden>
+  <div class="sheet-box">
+    <p id="askText" class="ask-text"></p>
+    <div class="row">
+      <button type="button" id="askNo" class="btn">취소</button>
+      <button type="button" id="askYes" class="primary">지우기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 사진 눌렀을 때 -->
+<div class="sheet" id="photoSheet" hidden>
+  <div class="sheet-box">
+    <div class="sheet-head"><h3>사진</h3><button type="button" class="x" data-close="photoSheet" aria-label="닫기">✕</button></div>
+    <img id="photoView" class="photo-view" alt="">
+    <button type="button" id="coverSetBtn" class="primary">★ 대표 사진으로 정하기</button>
+    <button type="button" id="photoDelBtn" class="btn">이 사진 빼기</button>
+  </div>
+</div>
+
 <!-- 사용법 -->
 <div class="sheet" id="helpSheet" hidden>
   <div class="sheet-box wide">
@@ -179,6 +210,7 @@
       <ol>
         <li><b>아이 추가</b>로 이름을 넣어요. 여러 명은 줄바꿈으로 한꺼번에 넣어요.</li>
         <li>아이를 누르고 <b>사진</b>을 넣어요. 찍은 날짜순으로 자동 정렬돼요.</li>
+        <li>사진을 누르면 <b>대표 사진</b>(첫 장 동그라미 사진)으로 정할 수 있어요.</li>
         <li>단체사진·행사 사진은 <b>공통 사진</b>에 넣으면 모든 아이 영상에 들어가요.</li>
         <li><b>영상 만들기</b>를 누르고, 완성되면 저장하거나 공유해요.</li>
       </ol>
@@ -207,6 +239,7 @@
 <script src="js/fonts.js"></script>
 <script src="js/photos.js"></script>
 <script src="js/children.js"></script>
+<script src="js/captions.js"></script>
 <script src="js/frames.js"></script>
 <script src="js/player.js"></script>
 <script src="js/music.js"></script>

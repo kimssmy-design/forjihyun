@@ -85,8 +85,10 @@ var State = (function () {
     bodyFont: 'b:Gowun Dodum',
     theme: 'cloud',
     seasons: true,
+    captionsOn: true,
+    captions: null,       // null이면 기본 문구
     photoSec: 3,
-    music: 'orgel',
+    music: 'picnic',
     musicName: ''
   };
   var data = { settings: Object.assign({}, DEFAULTS), children: [], selectedId: null };
@@ -98,6 +100,8 @@ var State = (function () {
         data.settings = Object.assign({}, DEFAULTS, saved.settings || {});
         data.children = saved.children || [];
         data.selectedId = saved.selectedId || null;
+        // 예전 기본 멜로디(오르골·통통)는 새 기본 곡으로 바꿔요
+        if (data.settings.music === 'orgel' || data.settings.music === 'tong') data.settings.music = 'picnic';
       }
       return data;
     }).catch(function () { return data; });

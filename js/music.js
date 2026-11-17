@@ -1,57 +1,22 @@
-// music.js — 배경음악 만들기 (직접 만든 짧은 멜로디 또는 내가 넣은 음악 파일)
+// music.js — 배경음악 (기본 곡 3개 또는 내가 넣은 음악 파일)
 var Music = (function () {
   var SR = 44100;
 
-  // 저작권 걱정 없는 자체 제작 멜로디 (8분음표 단위, null = 쉼표)
-  var MELODIES = {
-    orgel: {
-      name: '오르골', bpm: 96, wave: 'sine', decay: 1.4, vol: 0.32,
-      notes: [76, 79, 84, 79, 81, 79, 76, null, 74, 76, 79, 76, 74, 72, 74, null,
-        76, 79, 81, 84, 81, 79, 76, 79, 74, 76, 74, 72, null, null, 72, null],
-      bass: [48, 45, 41, 43]
-    },
-    tong: {
-      name: '통통', bpm: 120, wave: 'triangle', decay: 0.35, vol: 0.4,
-      notes: [72, null, 76, null, 79, null, 76, null, 81, null, 79, null, 76, null, 74, null,
-        72, 74, 76, 79, 81, 79, 76, 74, 72, null, 67, null, 72, null, null, null],
-      bass: [48, 53, 45, 43]
-    }
+  // music 폴더에 들어 있는 기본 곡
+  var SONGS = {
+    picnic: { name: '신나는 소풍', file: 'music/picnic.mp3' },
+    giggle: { name: '깔깔 웃는 하루', file: 'music/giggle.mp3' },
+    rainbow: { name: '무지개 물감', file: 'music/rainbow.mp3' }
   };
+  var cache = {};
 
-  function freq(m) { return 440 * Math.pow(2, (m - 69) / 12); }
-
-  function note(ctx, out, m, t, mel, vol) {
-    var o = ctx.createOscillator();
-    var g = ctx.createGain();
-    o.type = mel.wave;
-    o.frequency.value = freq(m);
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(vol, t + 0.006);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + mel.decay);
-    o.connect(g);
-    g.connect(out);
-    o.start(t);
-    o.stop(t + mel.decay + 0.05);
-    if (mel.wave === 'sine') { // 오르골 느낌의 맑은 배음
-      var o2 = ctx.createOscillator();
-      var g2 = ctx.createGain();
-      o2.frequency.value = freq(m) * 3;
-      g2.gain.setValueAtTime(0.0001, t);
-      g2.gain.exponentialRampToValueAtTime(vol * 0.12, t + 0.004);
-      g2.gain.exponentialRampToValueAtTime(0.0001, t + mel.decay * 0.4);
-      o2.connect(g2); g2.connect(out);
-      o2.start(t); o2.stop(t + mel.decay * 0.4 + 0.05);
+  async function songData(key) {
+    if (!cache[key]) {
+      var res = await fetch(SONGS[key].file);
+      if (!res.ok) throw new Error('음악 파일을 불러오지 못했어요');
+      cache[key] = await res.arrayBuffer();
     }
-  }
-
-  function melody(ctx, out, mel, duration) {
-    var step = 60 / mel.bpm / 2;
-    var i = 0;
-    for (var t = 0.15; t < duration; t += step, i++) {
-      var m = mel.notes[i % mel.notes.length];
-      if (m) note(ctx, out, m, t, mel, mel.vol);
-      if (i % 8 === 0) note(ctx, out, mel.bass[(i / 8) % mel.bass.length], t, mel, mel.vol * 0.7);
-    }
+    return cache[key].slice(0); // 변환하면 원본이 비워져서 복사본을 써요
   }
 
   function decodeOn(ctx, buf) {
@@ -69,13 +34,24 @@ var Music = (function () {
     });
   }
 
-  // 영상 길이에 맞춘 음악(AudioBuffer). 음악 없음이면 null
+  // 영상 길이에 맞춘 음악(AudioBuffer). 끝에서 2.5초 동안 소리가 줄어요. 음악 없음이면 null
   async function build(duration) {
     var s = State.data.settings;
     if (s.music === 'none') return null;
     var Off = window.OfflineAudioContext || window.webkitOfflineAudioContext;
     if (!Off) return null;
+
+    var data;
+    if (s.music === 'file') {
+      var rec = await Store.get('music');
+      if (!rec || !rec.blob) return null;
+      data = await rec.blob.arrayBuffer();
+    } else {
+      data = await songData(SONGS[s.music] ? s.music : 'picnic');
+    }
+
     var ctx = new Off(2, Math.ceil(duration * SR), SR);
+    var audio = await decodeOn(ctx, data);
     var master = ctx.createGain();
     master.connect(ctx.destination);
     var end = Math.max(0.5, duration);
@@ -84,18 +60,11 @@ var Music = (function () {
     master.gain.setValueAtTime(0.9, Math.max(0.5, end - 2.5));
     master.gain.linearRampToValueAtTime(0, end);
 
-    if (s.music === 'file') {
-      var rec = await Store.get('music');
-      if (!rec || !rec.blob) return null;
-      var audio = await decodeOn(ctx, await rec.blob.arrayBuffer());
-      var src = ctx.createBufferSource();
-      src.buffer = audio;
-      src.loop = true;
-      src.connect(master);
-      src.start(0);
-    } else {
-      melody(ctx, master, MELODIES[s.music] || MELODIES.orgel, duration);
-    }
+    var src = ctx.createBufferSource();
+    src.buffer = audio;
+    src.loop = true; // 영상이 곡보다 길면 처음부터 다시
+    src.connect(master);
+    src.start(0);
     return renderOffline(ctx);
   }
 
@@ -106,5 +75,5 @@ var Music = (function () {
     State.save();
   }
 
-  return { MELODIES: MELODIES, build: build, setFile: setFile };
+  return { SONGS: SONGS, build: build, setFile: setFile };
 })();

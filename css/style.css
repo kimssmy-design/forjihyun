@@ -179,3 +179,16 @@ textarea { resize: vertical; }
   position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 80;
   background: #5A3A2E; color: #fff; padding: 10px 18px; border-radius: 999px; font-size: 14px; max-width: 90vw; text-align: center;
 }
+
+/* 응원 문구 고치기 */
+.caps { margin: -4px 0 14px; }
+.caps summary { cursor: pointer; font-size: 14px; color: #9A2F5A; margin-bottom: 6px; }
+.caps textarea { font-size: 14px; }
+.caps .btn { margin-top: 6px; }
+
+/* 대표 사진 표시, 사진 보기, 확인 창 */
+.tile { cursor: pointer; }
+.tile .cv { position: absolute; left: 6px; top: 6px; background: #FFB547; color: #fff; border-radius: 999px; padding: 1px 8px; font-size: 12px; font-family: "Jua", sans-serif; }
+.tile.cover { border-color: #FFB547; }
+.photo-view { width: 100%; max-height: 50vh; object-fit: contain; border-radius: 16px; background: #fff; }
+.ask-text { margin: 6px 4px 4px; font-size: 16px; white-space: pre-line; text-align: center; }

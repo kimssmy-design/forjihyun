@@ -44,6 +44,21 @@ var Children = (function () {
     State.save();
   }
 
+  // 전체 지우기 (아이와 아이 사진 모두. 공통 사진은 남아요)
+  async function removeAll() {
+    var l = list();
+    for (var i = 0; i < l.length; i++) await Store.deleteOwner(l[i].id);
+    l.length = 0;
+    d().selectedId = null;
+    State.save();
+  }
+
+  // 대표(표지) 사진
+  function setCover(id, photoId) {
+    var c = get(id);
+    if (c) { c.coverId = photoId || null; State.save(); }
+  }
+
   function markDone(id, v) {
     var c = get(id);
     if (c) { c.done = v !== false; State.save(); }
@@ -65,16 +80,19 @@ var Children = (function () {
     return code % 28 !== 0;
   }
 
-  // {이름} → 서아, {이름아} → 서아야 / 하늘아
+  // {이름} → 서아, {이름아} → 서아야 / 하늘아, {이름이} → 서아 / 하늘이
   function fill(tpl, c) {
     var n = callName(c);
     var last = n.charAt(n.length - 1);
-    var a = isHangul(last) ? (hasBatchim(last) ? n + '아' : n + '야') : n;
-    return String(tpl || '').replace(/\{이름아\}/g, a).replace(/\{이름\}/g, n);
+    var han = isHangul(last), b = han && hasBatchim(last);
+    var a = han ? (b ? n + '아' : n + '야') : n;
+    var i = b ? n + '이' : n;
+    return String(tpl || '').replace(/\{이름아\}/g, a).replace(/\{이름이\}/g, i).replace(/\{이름\}/g, n);
   }
 
   return {
     list: list, get: get, selected: selected, addNames: addNames, select: select,
-    rename: rename, remove: remove, markDone: markDone, callName: callName, fill: fill
+    rename: rename, remove: remove, removeAll: removeAll, setCover: setCover,
+    markDone: markDone, callName: callName, fill: fill
   };
 })();

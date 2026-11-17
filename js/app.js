@@ -25,6 +25,17 @@ var App = (function () {
   }
   function S() { return State.data.settings; }
 
+  // 확인 창 (브라우저 기본 confirm 대신 — 앱 안 브라우저에서도 잘 떠요)
+  function ask(text, yesLabel) {
+    return new Promise(function (resolve) {
+      $('askText').textContent = text;
+      $('askYes').textContent = yesLabel || '지우기';
+      openSheet('askSheet');
+      $('askYes').onclick = function () { closeSheet('askSheet'); resolve(true); };
+      $('askNo').onclick = function () { closeSheet('askSheet'); resolve(false); };
+    });
+  }
+
   // ---------- 설정 ----------
   function seg(el, items, current, onPick) {
     el.innerHTML = '';
@@ -46,11 +57,14 @@ var App = (function () {
     $('sFrom').value = s.from;
     $('sDrop').checked = !!s.dropSurname;
     $('sSeason').checked = !!s.seasons;
+    $('sCaps').checked = !!s.captionsOn;
+    $('capsText').value = Captions.list().join('\n');
     renderFontBtns();
     var themes = Object.keys(Frames.THEMES).map(function (k) { return [k, Frames.THEMES[k].name]; });
     seg($('themeSeg'), themes, s.theme, function (v) { s.theme = v; State.save(); renderSettings(); });
     seg($('secSeg'), [[2, '2초'], [3, '3초'], [4, '4초'], [5, '5초']], s.photoSec, function (v) { s.photoSec = v; State.save(); renderSettings(); });
-    seg($('musicSeg'), [['none', '없음'], ['orgel', '오르골'], ['tong', '통통'], ['file', '내 음악']], s.music, function (v) {
+    var songs = Object.keys(Music.SONGS).map(function (k) { return [k, Music.SONGS[k].name]; });
+    seg($('musicSeg'), [['none', '없음']].concat(songs, [['file', '내 음악']]), s.music, function (v) {
       if (v === 'file' && !s.musicName) { $('musicFile').click(); return; }
       s.music = v; State.save(); renderSettings();
     });
@@ -76,6 +90,18 @@ var App = (function () {
     text('sFrom', 'from');
     $('sDrop').onchange = function () { S().dropSurname = $('sDrop').checked; State.save(); };
     $('sSeason').onchange = function () { S().seasons = $('sSeason').checked; State.save(); };
+    $('sCaps').onchange = function () { S().captionsOn = $('sCaps').checked; State.save(); };
+    $('capsText').addEventListener('input', function () {
+      var lines = $('capsText').value.split('\n').map(function (x) { return x.trim(); }).filter(Boolean);
+      S().captions = lines.length ? lines : null;
+      State.save();
+    });
+    $('capsReset').onclick = function () {
+      S().captions = null;
+      State.save();
+      $('capsText').value = Captions.DEFAULT.join('\n');
+      toast('기본 문구로 되돌렸어요');
+    };
     $('titleFontBtn').onclick = function () {
       Fonts.openPicker('title', S().titleFont, function (k) { S().titleFont = k; State.save(); renderFontBtns(); });
     };
@@ -89,7 +115,8 @@ var App = (function () {
       Music.setFile(f).then(function () { renderSettings(); toast('음악을 넣었어요'); })
         .catch(function () { toast('음악 파일을 저장하지 못했어요'); });
     };
-    $('musicTry').onclick = async function () {
+    function bindTry() { $('musicTry').textContent = '들어보기'; $('musicTry').onclick = tryMusic; }
+    async function tryMusic() {
       if (S().music === 'none') { toast('배경음악이 "없음"이에요'); return; }
       try {
         var buf = await Music.build(8);
@@ -97,9 +124,12 @@ var App = (function () {
         var ctx = new (window.AudioContext || window.webkitAudioContext)();
         var src = ctx.createBufferSource();
         src.buffer = buf; src.connect(ctx.destination); src.start();
-        src.onended = function () { ctx.close(); };
+        $('musicTry').onclick = function () { try { src.stop(); } catch (er) {} };
+        src.onended = function () { ctx.close(); bindTry(); };
+        $('musicTry').textContent = '멈추기';
       } catch (e) { toast('이 음악은 재생할 수 없어요'); }
-    };
+    }
+    bindTry();
     $('panelToggle').onclick = function () { $('panel').classList.toggle('open'); };
   }
 
@@ -143,6 +173,14 @@ var App = (function () {
 
   function bindChildren() {
     $('addChildBtn').onclick = openAddName;
+    $('clearAllBtn').onclick = async function () {
+      if (!Children.list().length) { toast('지울 아이가 없어요'); return; }
+      if (!(await ask('아이 ' + Children.list().length + '명과 아이 사진을 모두 지울까요?\n(공통 사진과 설정은 남아요)', '모두 지우기'))) return;
+      own.forEach(function (p) { Photos.forget(p.id); });
+      await Children.removeAll();
+      await refreshChild();
+      toast('모두 지웠어요');
+    };
     $('renameBtn').onclick = function () {
       var c = Children.selected();
       if (!c) return;
@@ -167,7 +205,7 @@ var App = (function () {
     $('deleteChildBtn').onclick = async function () {
       var c = Children.selected();
       if (!c) return;
-      if (!confirm(c.name + ' 아이와 사진을 모두 지울까요?')) return;
+      if (!(await ask(c.name + ' 아이와 사진을 모두 지울까요?'))) return;
       own.forEach(function (p) { Photos.forget(p.id); });
       await Children.remove(c.id);
       refreshChild();
@@ -175,24 +213,46 @@ var App = (function () {
   }
 
   // ---------- 사진 칸 ----------
-  function tile(p, target) {
+  async function removePhoto(p, target) {
+    await Photos.remove(p.id);
+    if (target === 'own') {
+      own = own.filter(function (x) { return x.id !== p.id; });
+      var c = Children.selected();
+      if (c.coverId === p.id) Children.setCover(c.id, null);
+      Children.markDone(c.id, false);
+    } else {
+      common = common.filter(function (x) { return x.id !== p.id; });
+    }
+    renderGrids();
+    renderChildren();
+  }
+
+  function tile(p, target, isCover) {
     var d = document.createElement('div');
-    d.className = 'tile';
-    d.innerHTML = '<img alt="">' + (p.exif ? '<span class="d"></span>' : '') + '<button type="button" class="rm" aria-label="사진 빼기">✕</button>';
+    d.className = 'tile' + (isCover ? ' cover' : '');
+    d.innerHTML = '<img alt="">' + (isCover ? '<span class="cv">★ 대표</span>' : '') + (p.exif ? '<span class="d"></span>' : '') + '<button type="button" class="rm" aria-label="사진 빼기">✕</button>';
     d.querySelector('img').src = Photos.thumb(p);
     if (p.exif) d.querySelector('.d').textContent = Photos.dateLabel(p.date);
-    d.querySelector('.rm').onclick = async function () {
-      await Photos.remove(p.id);
-      if (target === 'own') {
-        own = own.filter(function (x) { return x.id !== p.id; });
-        Children.markDone(Children.selected().id, false);
-      } else {
-        common = common.filter(function (x) { return x.id !== p.id; });
-      }
+    d.querySelector('.rm').onclick = function (e) { e.stopPropagation(); removePhoto(p, target); };
+    d.onclick = function () { openPhoto(p, target, isCover); };
+    return d;
+  }
+
+  function openPhoto(p, target, isCover) {
+    $('photoView').src = Photos.thumb(p);
+    var cb = $('coverSetBtn');
+    cb.hidden = target !== 'own';
+    cb.textContent = isCover ? '★ 지금 대표 사진이에요' : '★ 대표 사진으로 정하기';
+    cb.onclick = function () {
+      Children.setCover(Children.selected().id, p.id);
+      Children.markDone(Children.selected().id, false);
+      closeSheet('photoSheet');
       renderGrids();
       renderChildren();
+      toast('대표 사진으로 정했어요');
     };
-    return d;
+    $('photoDelBtn').onclick = function () { closeSheet('photoSheet'); removePhoto(p, target); };
+    openSheet('photoSheet');
   }
 
   function renderGrid(el, list, target) {
@@ -209,7 +269,9 @@ var App = (function () {
       el.appendChild(e);
       return;
     }
-    Photos.sortByDate(list).forEach(function (p) { el.appendChild(tile(p, target)); });
+    var c = Children.selected();
+    var cover = target === 'own' && c ? Player.coverOf(c, list) : null;
+    Photos.sortByDate(list).forEach(function (p) { el.appendChild(tile(p, target, cover && cover.id === p.id)); });
     var add = document.createElement('div');
     add.className = 'tile add';
     add.innerHTML = '<b>＋</b>사진 더 넣기';
@@ -394,7 +456,7 @@ var App = (function () {
       if (mine.length) list.push(c);
     }
     if (!list.length) { toast('사진이 들어간, 아직 안 만든 아이가 없어요'); return; }
-    if (!confirm(list.length + '명의 영상을 차례대로 만들고 저장할까요?\n(만드는 동안 이 창을 켜 두세요)')) return;
+    if (!(await ask(list.length + '명의 영상을 차례대로 만들고 저장할까요?\n(만드는 동안 이 창을 켜 두세요)', '만들기'))) return;
     var made = 0;
     showWorking('반 전체 만드는 중');
     cancelFlag = false;
@@ -490,7 +552,7 @@ var App = (function () {
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(renderFontBtns);
   }
 
-  return { init: init, toast: toast, openSheet: openSheet, closeSheet: closeSheet };
+  return { init: init, toast: toast, ask: ask, openSheet: openSheet, closeSheet: closeSheet };
 })();
 
 App.init().catch(function (e) {

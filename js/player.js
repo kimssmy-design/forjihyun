@@ -10,12 +10,21 @@ var Player = (function () {
   }
 
   // child: 아이, own: 아이 사진, common: 공통 사진
+  // 대표 사진: 직접 정한 사진, 없으면 아이 사진 중 가장 먼저 찍은 것
+  function coverOf(child, own) {
+    if (child.coverId) {
+      for (var i = 0; i < own.length; i++) if (own[i].id === child.coverId) return own[i];
+    }
+    return Photos.sortByDate(own)[0] || null;
+  }
+
   async function build(child, own, common) {
     var s = State.data.settings;
     var all = Photos.sortByDate(own.concat(common));
-    var firstOwn = Photos.sortByDate(own)[0] || all[0];
+    var cover = coverOf(child, own) || all[0];
+    var caps = s.captionsOn ? Captions.forChild(child, all.length) : [];
     var slides = [];
-    slides.push({ type: 'title', title: Children.fill(s.titleTpl, child), img: firstOwn ? await Photos.image(firstOwn) : null, dur: DUR.title });
+    slides.push({ type: 'title', title: Children.fill(s.titleTpl, child), img: cover ? await Photos.image(cover) : null, dur: DUR.title });
     var last = null, idx = 0;
     for (var i = 0; i < all.length; i++) {
       var p = all[i];
@@ -23,7 +32,7 @@ var Player = (function () {
         var season = Photos.seasonOf(p.date);
         if (season !== last) { slides.push({ type: 'season', season: season, dur: DUR.season }); last = season; }
       }
-      slides.push({ type: 'photo', img: await Photos.image(p), date: p.exif ? Photos.dateLabel(p.date) : '', idx: idx++, dur: +s.photoSec || 3 });
+      slides.push({ type: 'photo', img: await Photos.image(p), date: p.exif ? Photos.dateLabel(p.date) : '', caption: caps[i] || '', idx: idx++, dur: +s.photoSec || 3 });
     }
     slides.push({ type: 'end', text: Children.fill(s.endTpl, child), from: [s.className, s.from].filter(Boolean).join(' '), dur: DUR.end });
     Photos.keepOnly(all.map(function (x) { return x.id; }));
@@ -35,7 +44,7 @@ var Player = (function () {
     });
 
     // 캔버스에 쓸 글자를 미리 불러오기
-    var titleText = slides.map(function (x) { return x.title || x.text || x.season || ''; }).join('');
+    var titleText = slides.map(function (x) { return (x.title || x.text || x.season || '') + (x.caption || ''); }).join('');
     var bodyText = slides.map(function (x) { return (x.date || '') + (x.from || ''); }).join('') + (s.className || '') + '0123456789월일';
     await Promise.all([Fonts.ensure(s.titleFont, titleText + '가'), Fonts.ensure(s.bodyFont, bodyText + '가')]);
 
@@ -99,5 +108,5 @@ var Player = (function () {
     return { stop: stop };
   }
 
-  return { build: build, renderAt: renderAt, play: play, FADE: FADE };
+  return { build: build, coverOf: coverOf, renderAt: renderAt, play: play, FADE: FADE };
 })();

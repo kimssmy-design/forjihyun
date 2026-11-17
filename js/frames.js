@@ -324,10 +324,10 @@ var Frames = (function () {
     ctx.drawImage(background(themePal(t), t.deco, 2 + sl.idx % 3), 0, 0);
     var img = sl.img;
     var s = Photos.sizeOf(img);
-    var a = s.w / s.h, maxW = 600, maxH = 860;
+    var a = s.w / s.h, maxW = 600, maxH = sl.caption ? 790 : 860;
     var cw, ch;
     if (a > maxW / maxH) { cw = maxW; ch = cw / a; } else { ch = maxH; cw = ch * a; }
-    var cx = W / 2, cy = 600;
+    var cx = W / 2, cy = sl.caption ? 570 : 600;
     var k = 0.94 + 0.06 * easeOut(p * 4);
     var tilt = (sl.idx % 2 ? 1 : -1) * 1.8 * Math.PI / 180;
     var pad = 18;
@@ -349,8 +349,22 @@ var Frames = (function () {
     if (sl.idx % 2) heart(ctx, cw / 2 - 6, -ch / 2 + 6, 0.85, t.sticker);
     else star(ctx, cw / 2 - 4, -ch / 2 + 4, 40, '#FFD66B', 0.25);
     ctx.restore();
-    if (sl.date) {
-      var dy = Math.min(H - 70, cy + ch / 2 + pad + 80);
+    var bottom = cy + ch / 2 + pad;
+    if (sl.caption) {
+      // 응원 문구 (아래에서 살짝 올라오며 나타나요)
+      var ck = easeOut((p - 0.08) * 4);
+      var ft = fitText(ctx, sl.caption, env.settings.titleFont, 58, 640, 2);
+      ctx.font = Fonts.css(env.settings.titleFont, ft.px);
+      var capY = Math.min(H - 150, bottom + 40 + ft.lines.length * ft.px * 0.6) + (1 - ck) * 20;
+      ctx.globalAlpha = ck;
+      drawLines(ctx, ft.lines, W / 2, capY, ft.px * 1.2, t.text, '#FFFFFF', 14);
+      ctx.globalAlpha = 1;
+      if (sl.date) {
+        ctx.font = Fonts.css(env.settings.bodyFont, 34);
+        drawLines(ctx, [sl.date], W / 2, Math.min(H - 60, capY + ft.lines.length * ft.px * 0.6 + 50), 34, t.text, '#FFFFFF', 8);
+      }
+    } else if (sl.date) {
+      var dy = Math.min(H - 70, bottom + 80);
       ctx.font = Fonts.css(env.settings.bodyFont, 44);
       drawLines(ctx, [sl.date], W / 2, dy, 44, t.text, '#FFFFFF', 10);
     }
