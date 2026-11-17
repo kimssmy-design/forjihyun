@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>우리 반 포토 영상</title>
+<meta name="theme-color" content="#FFF8EE">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Do+Hyeon&family=Gaegu:wght@700&family=Dongle:wght@700&family=Gamja+Flower&family=Sunflower:wght@500&family=Single+Day&family=Hi+Melody&family=Nanum+Pen+Script&family=Gowun+Dodum&display=swap">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="brand"><span class="brand-star">★</span> 우리 반 포토 영상</div>
+  <button type="button" id="helpBtn" class="chip">? 사용법</button>
+</header>
+
+<div id="inappBanner" class="banner" hidden>
+  <span id="inappText">카카오톡 안에서는 영상 저장이 안 될 수 있어요.</span>
+  <button type="button" id="inappBtn" class="chip">기본 브라우저로 열기</button>
+</div>
+
+<div class="layout">
+  <aside class="panel" id="panel">
+    <button type="button" class="panel-toggle" id="panelToggle"><span>⚙ 설정</span><span class="caret">▾</span></button>
+    <div class="panel-body">
+      <div class="field">
+        <label for="sClass">반 이름</label>
+        <input id="sClass" type="text" placeholder="햇님반" maxlength="20">
+      </div>
+      <div class="field">
+        <label for="sTitle">첫 장 제목</label>
+        <input id="sTitle" type="text" maxlength="30">
+        <p class="hint">{이름} 자리에 아이 이름이 들어가요</p>
+      </div>
+      <div class="field">
+        <label for="sEnd">마지막 장 문구</label>
+        <textarea id="sEnd" rows="2" maxlength="60"></textarea>
+        <p class="hint">{이름아}는 '서아야', '하늘아'처럼 바뀌어요</p>
+      </div>
+      <div class="field">
+        <label for="sFrom">보내는 사람</label>
+        <input id="sFrom" type="text" placeholder="선생님이" maxlength="20">
+      </div>
+      <label class="check"><input type="checkbox" id="sDrop"> 성 빼고 부르기 (김서아 → 서아)</label>
+
+      <div class="field two">
+        <div><label>제목 글꼴</label><button type="button" id="titleFontBtn" class="font-btn"></button></div>
+        <div><label>본문 글꼴</label><button type="button" id="bodyFontBtn" class="font-btn"></button></div>
+      </div>
+
+      <div class="field">
+        <label>프레임</label>
+        <div class="seg" id="themeSeg"></div>
+      </div>
+      <label class="check"><input type="checkbox" id="sSeason"> 계절 장 넣기 (봄·여름·가을·겨울)</label>
+
+      <div class="field">
+        <label>사진 한 장 시간</label>
+        <div class="seg" id="secSeg"></div>
+      </div>
+
+      <div class="field">
+        <label>배경음악</label>
+        <div class="seg" id="musicSeg"></div>
+        <div class="music-row">
+          <label class="btn small">음악 파일 넣기<input type="file" id="musicFile" accept="audio/*" hidden></label>
+          <button type="button" id="musicTry" class="btn small">들어보기</button>
+        </div>
+        <p class="hint" id="musicName"></p>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <p class="safe">🔒 사진은 이 기기 안에서만 처리돼요 · 자동 저장돼요</p>
+
+    <section class="card">
+      <div class="sec-head">
+        <h2>아이 목록 <span id="doneCount" class="count"></span></h2>
+        <button type="button" id="addChildBtn" class="chip">+ 아이 추가</button>
+      </div>
+      <div id="childChips" class="chips"></div>
+    </section>
+
+    <section class="card" id="childSection">
+      <div class="sec-head">
+        <h2 id="childTitle"></h2>
+        <div class="sec-tools">
+          <button type="button" id="renameBtn" class="link">이름 바꾸기</button>
+          <button type="button" id="deleteChildBtn" class="link danger">삭제</button>
+        </div>
+      </div>
+      <p class="sub" id="childSub"></p>
+      <div id="ownGrid" class="grid"></div>
+    </section>
+
+    <section class="card common">
+      <div class="sec-head">
+        <h2>공통 사진</h2>
+        <span class="sub">모든 아이 영상에 들어가요</span>
+      </div>
+      <div id="commonGrid" class="grid"></div>
+    </section>
+
+    <div class="actions">
+      <button type="button" id="makeBtn" class="primary big">✨ 영상 만들기</button>
+      <div class="row">
+        <button type="button" id="previewBtn" class="btn">▶ 미리보기</button>
+        <button type="button" id="batchBtn" class="btn pc-only">남은 아이 모두 만들기</button>
+      </div>
+    </div>
+
+    <footer class="foot">made by 다나맘</footer>
+  </main>
+</div>
+
+<!-- 영상 만들기 / 완성 -->
+<div class="sheet" id="resultSheet" hidden>
+  <div class="sheet-box">
+    <div class="sheet-head"><h3 id="resultTitle">영상 만들기</h3><button type="button" class="x" data-close="resultSheet" aria-label="닫기">✕</button></div>
+    <div class="screen">
+      <canvas id="workCanvas" width="720" height="1280"></canvas>
+      <video id="resultVideo" controls playsinline hidden></video>
+    </div>
+    <div id="working">
+      <div class="bar"><div id="barFill"></div></div>
+      <p class="sub center" id="workText">영상 만드는 중… 화면을 켜 두세요</p>
+      <button type="button" id="cancelBtn" class="btn">그만 만들기</button>
+    </div>
+    <div id="done" hidden>
+      <p class="sub center" id="doneNote"></p>
+      <button type="button" id="saveBtn" class="primary">영상 저장</button>
+      <div class="row">
+        <button type="button" id="shareBtn" class="btn">카톡 공유</button>
+        <button type="button" id="coverBtn" class="btn">대표 사진 저장</button>
+      </div>
+      <button type="button" id="nextBtn" class="btn">다음 아이로 →</button>
+    </div>
+  </div>
+</div>
+
+<!-- 미리보기 -->
+<div class="sheet" id="previewSheet" hidden>
+  <div class="sheet-box">
+    <div class="sheet-head"><h3>미리보기</h3><button type="button" class="x" data-close="previewSheet" aria-label="닫기">✕</button></div>
+    <div class="screen"><canvas id="previewCanvas" width="720" height="1280"></canvas></div>
+    <div class="bar"><div id="previewFill"></div></div>
+    <p class="sub center" id="previewText"></p>
+    <button type="button" id="replayBtn" class="btn">처음부터 다시</button>
+  </div>
+</div>
+
+<!-- 글꼴 고르기 -->
+<div class="sheet" id="fontSheet" hidden>
+  <div class="sheet-box wide">
+    <div class="sheet-head"><h3 id="fontSheetTitle">글꼴 고르기</h3><button type="button" class="x" data-close="fontSheet" aria-label="닫기">✕</button></div>
+    <div id="fontSheetBody" class="font-body"></div>
+  </div>
+</div>
+
+<!-- 아이 이름 넣기 -->
+<div class="sheet" id="nameSheet" hidden>
+  <div class="sheet-box">
+    <div class="sheet-head"><h3 id="nameTitle">아이 추가</h3><button type="button" class="x" data-close="nameSheet" aria-label="닫기">✕</button></div>
+    <textarea id="nameInput" rows="5" placeholder="김서아&#10;이도윤&#10;박하늘"></textarea>
+    <p class="hint">여러 명은 줄을 바꾸거나 쉼표로 나눠 한꺼번에 넣을 수 있어요</p>
+    <button type="button" id="nameOk" class="primary">넣기</button>
+  </div>
+</div>
+
+<!-- 사용법 -->
+<div class="sheet" id="helpSheet" hidden>
+  <div class="sheet-box wide">
+    <div class="sheet-head"><h3>사용법</h3><button type="button" class="x" data-close="helpSheet" aria-label="닫기">✕</button></div>
+    <div class="help">
+      <ol>
+        <li><b>아이 추가</b>로 이름을 넣어요. 여러 명은 줄바꿈으로 한꺼번에 넣어요.</li>
+        <li>아이를 누르고 <b>사진</b>을 넣어요. 찍은 날짜순으로 자동 정렬돼요.</li>
+        <li>단체사진·행사 사진은 <b>공통 사진</b>에 넣으면 모든 아이 영상에 들어가요.</li>
+        <li><b>영상 만들기</b>를 누르고, 완성되면 저장하거나 공유해요.</li>
+      </ol>
+      <p class="help-h">기기별 저장</p>
+      <ul>
+        <li><b>아이폰</b>: [영상 저장] → <b>'동영상 저장'</b>을 누르면 사진 앱에 들어가요.</li>
+        <li><b>갤럭시</b>: 내 파일 → 다운로드 폴더에 저장돼요. 갤러리에서도 보여요.</li>
+        <li><b>PC</b>: [남은 아이 모두 만들기]로 반 전체를 차례대로 만들 수 있어요. '여러 파일 다운로드' 허용 창이 뜨면 허용해 주세요.</li>
+      </ul>
+      <p class="help-h">알아 두면 좋아요</p>
+      <ul>
+        <li>카톡으로 받은 사진은 <b>'원본'</b>으로 저장해야 찍은 날짜가 남아요.</li>
+        <li>영상 만드는 동안에는 화면을 켜 두고 다른 앱으로 넘어가지 마세요.</li>
+        <li>사진은 서버에 올라가지 않고 이 기기에만 저장돼요. 아이폰은 이 페이지를 오래(7일 넘게) 안 열면 저장한 사진이 지워질 수 있으니, 며칠 안에 몰아서 만들어 주세요.</li>
+        <li>카톡 안에서 열면 저장이 안 될 수 있어요. 크롬·삼성 인터넷·사파리로 열어 주세요.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="photoInput" accept="image/*" multiple hidden>
+<div id="toast" class="toast" hidden></div>
+
+<script src="js/lib/mp4-muxer.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/fonts.js"></script>
+<script src="js/photos.js"></script>
+<script src="js/children.js"></script>
+<script src="js/frames.js"></script>
+<script src="js/player.js"></script>
+<script src="js/music.js"></script>
+<script src="js/export.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
