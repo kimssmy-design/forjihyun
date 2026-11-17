@@ -164,6 +164,26 @@ var Photos = (function () {
     if (images[id]) { if (images[id].close) images[id].close(); delete images[id]; }
   }
 
+  // 다른 아이에게도 넣기 (같은 사진을 복사)
+  async function copyTo(p, owner) {
+    var c = { id: uid(), owner: owner, blob: p.blob, w: p.w, h: p.h, date: p.date, exif: p.exif, text: p.text || '' };
+    await Store.putPhoto(c);
+    return c;
+  }
+
+  // 다른 아이로 옮기기
+  async function moveTo(p, owner) {
+    p.owner = owner;
+    await Store.putPhoto(p);
+    return p;
+  }
+
+  // 사진별 글 저장
+  function setText(p, text) {
+    p.text = text;
+    return Store.putPhoto(p);
+  }
+
   async function remove(id) {
     forget(id);
     await Store.deletePhoto(id);
@@ -171,6 +191,7 @@ var Photos = (function () {
 
   return {
     addFiles: addFiles, sortByDate: sortByDate, seasonOf: seasonOf, dateLabel: dateLabel,
-    thumb: thumb, image: image, keepOnly: keepOnly, remove: remove, forget: forget, sizeOf: sizeOf
+    thumb: thumb, image: image, keepOnly: keepOnly, remove: remove, forget: forget, sizeOf: sizeOf,
+    copyTo: copyTo, moveTo: moveTo, setText: setText
   };
 })();

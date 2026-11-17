@@ -18,9 +18,56 @@ var Player = (function () {
     return Photos.sortByDate(own)[0] || null;
   }
 
+  function hash(str) {
+    var h = 2166136261;
+    for (var i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return h >>> 0;
+  }
+
+  // 아이마다 다르지만, 같은 아이는 미리보기·영상이 같은 순서가 되게 섞어요
+  function shuffled(list, child) {
+    var seed = (hash(child.id || child.name) + (State.data.settings.shuffleSeed || 1) * 7919) >>> 0;
+    var out = list.slice().sort(function (a, b) { return a.id < b.id ? -1 : 1; });
+    for (var j = out.length - 1; j > 0; j--) {
+      seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+      var r = seed % (j + 1);
+      var tmp = out[j]; out[j] = out[r]; out[r] = tmp;
+    }
+    return out;
+  }
+
+  // 영상에 들어갈 사진 순서
+  function order(child, own, common) {
+    var list = own.concat(child.noCommon ? [] : common);
+    return State.data.settings.order === 'shuffle' ? shuffled(list, child) : Photos.sortByDate(list);
+  }
+
+  function useSeasons() {
+    var s = State.data.settings;
+    return s.order !== 'shuffle' && s.seasons;
+  }
+
+  // 예상 길이(초)·용량(MB) — 사진을 열지 않고 빠르게 계산
+  function estimate(child, own, common) {
+    var all = order(child, own, common);
+    if (!all.length) return null;
+    var n = 2, sec = DUR.title + DUR.end, last = null;
+    all.forEach(function (p) {
+      if (useSeasons()) {
+        var se = Photos.seasonOf(p.date);
+        if (se !== last) { n++; sec += DUR.season; last = se; }
+      }
+      n++;
+      sec += +State.data.settings.photoSec || 3;
+    });
+    sec -= FADE * (n - 1);
+    return { count: all.length, sec: sec, mb: sec * 0.22 };
+  }
+
   async function build(child, own, common) {
     var s = State.data.settings;
-    var all = Photos.sortByDate(own.concat(common));
+    var shuffle = s.order === 'shuffle';
+    var all = order(child, own, common);
     var cover = coverOf(child, own) || all[0];
     var caps = s.captionsOn ? Captions.forChild(child, all.length) : [];
     var slides = [];
@@ -28,13 +75,20 @@ var Player = (function () {
     var last = null, idx = 0;
     for (var i = 0; i < all.length; i++) {
       var p = all[i];
-      if (s.seasons) {
+      if (useSeasons()) {
         var season = Photos.seasonOf(p.date);
         if (season !== last) { slides.push({ type: 'season', season: season, dur: DUR.season }); last = season; }
       }
-      slides.push({ type: 'photo', img: await Photos.image(p), date: p.exif ? Photos.dateLabel(p.date) : '', caption: caps[i] || '', idx: idx++, dur: +s.photoSec || 3 });
+      var ownText = s.photoTextOn && p.text ? Children.fill(p.text, child) : '';
+      slides.push({
+        type: 'photo', img: await Photos.image(p),
+        date: !shuffle && p.exif ? Photos.dateLabel(p.date) : '',
+        caption: ownText || caps[i] || '',
+        idx: idx++, dur: +s.photoSec || 3
+      });
     }
-    slides.push({ type: 'end', text: Children.fill(s.endTpl, child), from: [s.className, s.from].filter(Boolean).join(' '), dur: DUR.end });
+    var msg = s.personalOn && child.message && child.message.trim() ? child.message.trim() : s.endTpl;
+    slides.push({ type: 'end', text: Children.fill(msg, child), from: [s.className, s.from].filter(Boolean).join(' '), dur: DUR.end });
     Photos.keepOnly(all.map(function (x) { return x.id; }));
 
     var t = 0;
@@ -108,5 +162,5 @@ var Player = (function () {
     return { stop: stop };
   }
 
-  return { build: build, coverOf: coverOf, renderAt: renderAt, play: play, FADE: FADE };
+  return { build: build, estimate: estimate, coverOf: coverOf, renderAt: renderAt, play: play, FADE: FADE };
 })();

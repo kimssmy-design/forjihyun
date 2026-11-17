@@ -61,6 +61,10 @@ var Store = (function () {
     },
 
     putFont: function (f) { return run('fonts', 'readwrite', function (s) { return s.put(f); }); },
+    clearPhotos: function () { return run('photos', 'readwrite', function (s) { return s.clear(); }); },
+    allPhotos: function () {
+      return run('photos', 'readonly', function (s) { return s.getAll(); }).then(function (l) { return l || []; });
+    },
     allFonts: function () {
       return run('fonts', 'readonly', function (s) { return s.getAll(); })
         .then(function (list) { return list || []; });
@@ -85,7 +89,11 @@ var State = (function () {
     bodyFont: 'b:Gowun Dodum',
     theme: 'cloud',
     seasons: true,
+    order: 'date',        // date: 날짜순, shuffle: 골고루 섞기
+    shuffleSeed: 1,
     captionsOn: true,
+    personalOn: false,    // 아이별 한마디
+    photoTextOn: false,   // 사진별 글
     captions: null,       // null이면 기본 문구
     photoSec: 3,
     music: 'picnic',
@@ -114,5 +122,11 @@ var State = (function () {
     }, 300);
   }
 
-  return { data: data, load: load, save: save, DEFAULTS: DEFAULTS };
+  // 바로 저장 (불러오기 직후처럼 기다려야 할 때)
+  function saveNow() {
+    clearTimeout(timer);
+    return Store.set('state', JSON.parse(JSON.stringify(data)));
+  }
+
+  return { data: data, load: load, save: save, saveNow: saveNow, DEFAULTS: DEFAULTS };
 })();

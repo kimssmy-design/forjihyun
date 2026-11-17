@@ -17,9 +17,12 @@ var App = (function () {
     clearTimeout(toastTimer);
     toastTimer = setTimeout(function () { t.hidden = true; }, ms || 2600);
   }
+  var closeHooks = {};
+  function onClose(id, fn) { closeHooks[id] = fn; }
   function openSheet(id) { $(id).hidden = false; }
   function closeSheet(id) {
     $(id).hidden = true;
+    if (closeHooks[id]) { var f = closeHooks[id]; delete closeHooks[id]; f(); }
     if (id === 'previewSheet' && previewCtl) { previewCtl.stop(); previewCtl = null; }
     if (id === 'resultSheet') { cancelFlag = true; $('resultVideo').pause(); }
   }
@@ -58,6 +61,13 @@ var App = (function () {
     $('sDrop').checked = !!s.dropSurname;
     $('sSeason').checked = !!s.seasons;
     $('sCaps').checked = !!s.captionsOn;
+    $('sPersonal').checked = !!s.personalOn;
+    $('sPhotoText').checked = !!s.photoTextOn;
+    var shuffle = s.order === 'shuffle';
+    seg($('orderSeg'), [['date', '날짜순'], ['shuffle', '골고루 섞기']], s.order, function (v) { s.order = v; State.save(); renderSettings(); });
+    $('orderHint').textContent = shuffle ? '날짜와 계절 장 없이 섞어요. 아이마다 순서가 달라요.' : '찍은 날짜순으로 놓고, 사진 아래에 날짜를 보여 줘요.';
+    $('reshuffleBtn').hidden = !shuffle;
+    $('seasonRow').hidden = shuffle;
     $('capsText').value = Captions.list().join('\n');
     renderFontBtns();
     var themes = Object.keys(Frames.THEMES).map(function (k) { return [k, Frames.THEMES[k].name]; });
@@ -69,6 +79,8 @@ var App = (function () {
       s.music = v; State.save(); renderSettings();
     });
     $('musicName').textContent = s.musicName ? '내 음악: ' + s.musicName : '';
+    renderChildExtras();
+    updateEstimate();
   }
 
   function renderFontBtns() {
@@ -89,7 +101,34 @@ var App = (function () {
     text('sEnd', 'endTpl');
     text('sFrom', 'from');
     $('sDrop').onchange = function () { S().dropSurname = $('sDrop').checked; State.save(); };
-    $('sSeason').onchange = function () { S().seasons = $('sSeason').checked; State.save(); };
+    $('sSeason').onchange = function () { S().seasons = $('sSeason').checked; State.save(); updateEstimate(); };
+    $('sPersonal').onchange = function () { S().personalOn = $('sPersonal').checked; State.save(); renderChildExtras(); };
+    $('sPhotoText').onchange = function () { S().photoTextOn = $('sPhotoText').checked; State.save(); };
+    $('reshuffleBtn').onclick = function () {
+      S().shuffleSeed = (S().shuffleSeed || 1) + 1;
+      State.save();
+      toast('순서를 다시 섞었어요. 미리보기로 확인해 보세요');
+    };
+    $('backupSaveBtn').onclick = async function () {
+      toast('백업 파일 만드는 중…', 60000);
+      try {
+        var b = await Backup.make();
+        await Exporter.save(b.blob, b.name);
+        toast('사진 ' + b.count + '장을 백업 파일로 저장했어요', 3500);
+      } catch (e) { toast('백업 파일을 만들지 못했어요'); }
+    };
+    $('backupFile').onchange = async function (e) {
+      var f = e.target.files[0];
+      e.target.value = '';
+      if (!f) return;
+      if (!(await ask('백업 파일을 불러올까요?\n지금 작업은 백업 파일의 내용으로 바뀌어요.', '불러오기'))) return;
+      toast('불러오는 중…', 120000);
+      try {
+        var n = await Backup.read(f);
+        toast('사진 ' + n + '장을 불러왔어요', 3000);
+        setTimeout(function () { location.reload(); }, 800);
+      } catch (er) { toast(er && er.message ? er.message : '불러오지 못했어요', 4000); }
+    };
     $('sCaps').onchange = function () { S().captionsOn = $('sCaps').checked; State.save(); };
     $('capsText').addEventListener('input', function () {
       var lines = $('capsText').value.split('\n').map(function (x) { return x.trim(); }).filter(Boolean);
@@ -230,29 +269,21 @@ var App = (function () {
   function tile(p, target, isCover) {
     var d = document.createElement('div');
     d.className = 'tile' + (isCover ? ' cover' : '');
-    d.innerHTML = '<img alt="">' + (isCover ? '<span class="cv">★ 대표</span>' : '') + (p.exif ? '<span class="d"></span>' : '') + '<button type="button" class="rm" aria-label="사진 빼기">✕</button>';
+    d.innerHTML = '<img alt="">' + (isCover ? '<span class="cv">★ 대표</span>' : '') +
+      (p.exif ? '<span class="d"></span>' : '') + (p.text ? '<span class="tx">글</span>' : '') +
+      '<button type="button" class="rm" aria-label="사진 빼기">✕</button>';
     d.querySelector('img').src = Photos.thumb(p);
     if (p.exif) d.querySelector('.d').textContent = Photos.dateLabel(p.date);
     d.querySelector('.rm').onclick = function (e) { e.stopPropagation(); removePhoto(p, target); };
-    d.onclick = function () { openPhoto(p, target, isCover); };
-    return d;
-  }
-
-  function openPhoto(p, target, isCover) {
-    $('photoView').src = Photos.thumb(p);
-    var cb = $('coverSetBtn');
-    cb.hidden = target !== 'own';
-    cb.textContent = isCover ? '★ 지금 대표 사진이에요' : '★ 대표 사진으로 정하기';
-    cb.onclick = function () {
-      Children.setCover(Children.selected().id, p.id);
-      Children.markDone(Children.selected().id, false);
-      closeSheet('photoSheet');
-      renderGrids();
-      renderChildren();
-      toast('대표 사진으로 정했어요');
+    d.onclick = function () {
+      PhotoMenu.open(p, target, isCover, function (kind, ph) {
+        if (kind === 'delete') { removePhoto(ph, target); return; }
+        if (kind === 'move') own = own.filter(function (x) { return x.id !== ph.id; });
+        renderGrids();
+        renderChildren();
+      });
     };
-    $('photoDelBtn').onclick = function () { closeSheet('photoSheet'); removePhoto(p, target); };
-    openSheet('photoSheet');
+    return d;
   }
 
   function renderGrid(el, list, target) {
@@ -283,10 +314,47 @@ var App = (function () {
     var c = Children.selected();
     if (c) {
       $('childTitle').textContent = c.name + ' 사진';
-      $('childSub').textContent = '사진 ' + own.length + '장 · 찍은 날짜순' + (common.length ? ' · 공통 사진 ' + common.length + '장 함께' : '') + (c.done ? ' · 완성 ✓' : '');
+      var com = common.length ? (c.noCommon ? ' · 공통 사진 뺌' : ' · 공통 사진 ' + common.length + '장 함께') : '';
+      $('childSub').textContent = '사진 ' + own.length + '장' + com + (c.done ? ' · 완성 ✓' : '');
       renderGrid($('ownGrid'), own, 'own');
     }
     renderGrid($('commonGrid'), common, 'common');
+    updateEstimate();
+  }
+
+  // 아이별: 공통 사진 빼기, 한마디
+  function renderChildExtras() {
+    var c = Children.selected();
+    if (!c) return;
+    $('noCommon').checked = !!c.noCommon;
+    $('msgBox').hidden = !S().personalOn;
+    $('childMsg').value = c.message || '';
+    $('childMsg').placeholder = Children.fill(S().endTpl, c);
+  }
+
+  function fmtSec(sec) {
+    sec = Math.round(sec);
+    var m = Math.floor(sec / 60), r = sec % 60;
+    return m ? m + '분 ' + (r ? r + '초' : '') : r + '초';
+  }
+
+  function updateEstimate() {
+    var c = Children.selected();
+    var e = c ? Player.estimate(c, own, common) : null;
+    $('estText').textContent = e ? '사진 ' + e.count + '장 · 약 ' + fmtSec(e.sec) + ' · 약 ' + Math.max(1, Math.round(e.mb)) + 'MB' : '';
+  }
+
+  function bindChildExtras() {
+    $('noCommon').onchange = function () {
+      var c = Children.selected();
+      Children.update(c.id, { noCommon: $('noCommon').checked, done: false });
+      renderGrids();
+      renderChildren();
+    };
+    $('childMsg').addEventListener('input', function () {
+      var c = Children.selected();
+      if (c) Children.update(c.id, { message: $('childMsg').value });
+    });
   }
 
   function pickPhotos(target) {
@@ -329,6 +397,7 @@ var App = (function () {
     var c = Children.selected();
     own = c ? await Store.photosByOwner(c.id) : [];
     renderChildren();
+    renderChildExtras();
     renderGrids();
   }
 
@@ -347,7 +416,7 @@ var App = (function () {
 
   async function makeOne(c, onProgress) {
     var mine = await Store.photosByOwner(c.id);
-    if (!mine.length && !common.length) throw new Error('사진을 먼저 넣어 주세요');
+    if (!mine.length && (c.noCommon || !common.length)) throw new Error('사진을 먼저 넣어 주세요');
     var tl = await Player.build(c, mine, common);
     var audio = null;
     try { audio = await Music.build(tl.total); } catch (e) { toast('음악을 불러오지 못해 음악 없이 만들어요', 3000); }
@@ -360,7 +429,7 @@ var App = (function () {
   function guardFirst() {
     var c = Children.selected();
     if (!c) { toast('먼저 아이 이름을 넣어 주세요'); openAddName(); return null; }
-    if (!own.length && !common.length) { toast('사진을 먼저 넣어 주세요'); return null; }
+    if (!own.length && (c.noCommon || !common.length)) { toast('사진을 먼저 넣어 주세요'); return null; }
     return c;
   }
 
@@ -546,13 +615,14 @@ var App = (function () {
     bindSettings();
     bindChildren();
     bindPhotos();
+    bindChildExtras();
     bindResult();
     renderSettings();
     await refreshChild();
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(renderFontBtns);
   }
 
-  return { init: init, toast: toast, ask: ask, openSheet: openSheet, closeSheet: closeSheet };
+  return { init: init, toast: toast, ask: ask, openSheet: openSheet, closeSheet: closeSheet, onClose: onClose };
 })();
 
 App.init().catch(function (e) {

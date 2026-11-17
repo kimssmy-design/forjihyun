@@ -192,3 +192,17 @@ textarea { resize: vertical; }
 .tile.cover { border-color: #FFB547; }
 .photo-view { width: 100%; max-height: 50vh; object-fit: contain; border-radius: 16px; background: #fff; }
 .ask-text { margin: 6px 4px 4px; font-size: 16px; white-space: pre-line; text-align: center; }
+
+/* 아이별 설정, 예상 길이, 아이 고르기 */
+.check.small { font-size: 13.5px; margin-bottom: 10px; }
+.msg-box { background: #FFF6F9; border-radius: 14px; padding: 10px 12px; margin-bottom: 12px; }
+.msg-box label { display: block; font-size: 13.5px; color: #9A2F5A; margin-bottom: 4px; }
+.hint.warn { color: #9A6A2E; background: #FFF4DE; border-radius: 10px; padding: 6px 10px; margin: -2px 0 10px; }
+.est { margin: -2px 0 2px; }
+.backup .row { gap: 6px; }
+#reshuffleBtn { margin-top: 6px; }
+#photoText { width: 100%; }
+.pick-list { display: flex; flex-direction: column; gap: 6px; max-height: 50vh; overflow: auto; }
+.pick { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: #fff; border: 2px solid var(--line); border-radius: 14px; font-family: "Jua", sans-serif; font-size: 16px; cursor: pointer; }
+.pick input { width: 20px; height: 20px; accent-color: var(--pink); }
+.tile .tx { position: absolute; right: 6px; bottom: 6px; background: #FF6F9A; color: #fff; border-radius: 999px; padding: 0 7px; font-size: 12px; }

@@ -59,6 +59,12 @@ var Children = (function () {
     if (c) { c.coverId = photoId || null; State.save(); }
   }
 
+  // 아이별 설정 바꾸기 (noCommon: 공통 사진 빼기, message: 아이별 한마디)
+  function update(id, fields) {
+    var c = get(id);
+    if (c) { Object.assign(c, fields); State.save(); }
+  }
+
   function markDone(id, v) {
     var c = get(id);
     if (c) { c.done = v !== false; State.save(); }
@@ -92,7 +98,7 @@ var Children = (function () {
 
   return {
     list: list, get: get, selected: selected, addNames: addNames, select: select,
-    rename: rename, remove: remove, removeAll: removeAll, setCover: setCover,
+    rename: rename, remove: remove, removeAll: removeAll, setCover: setCover, update: update,
     markDone: markDone, callName: callName, fill: fill
   };
 })();
