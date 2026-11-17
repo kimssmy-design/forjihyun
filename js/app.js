@@ -190,14 +190,28 @@ var App = (function () {
       var b = document.createElement('button');
       b.type = 'button';
       b.className = 'kid' + (c.done ? ' done' : '') + (sel && c.id === sel.id ? ' on' : '');
-      b.textContent = (c.done ? '✓ ' : '') + c.name;
+      b.innerHTML = '<span></span><span class="kx" role="button" aria-label="지우기">✕</span>';
+      b.firstChild.textContent = (c.done ? '✓ ' : '') + c.name;
       b.onclick = function () { Children.select(c.id); refreshChild(); };
+      b.querySelector('.kx').onclick = function (e) { e.stopPropagation(); removeChild(c); };
       box.appendChild(b);
     });
     var done = list.filter(function (c) { return c.done; }).length;
     $('doneCount').textContent = list.length ? '(' + done + ' / ' + list.length + ' 완성)' : '';
     $('childSection').hidden = !sel;
     $('makeBtn').textContent = sel ? '✨ ' + Children.callName(sel) + ' 영상 만들기' : '✨ 영상 만들기';
+  }
+
+  // 한 명 지우기 (이름표의 ✕ 또는 '삭제')
+  async function removeChild(c) {
+    if (!(await ask(c.name + ' 아이와 사진을 지울까요?'))) return;
+    var sel = Children.selected();
+    var keep = sel && sel.id !== c.id ? sel.id : null;   // 다른 아이를 지우면 지금 고른 아이 그대로
+    if (!keep) own.forEach(function (p) { Photos.forget(p.id); });
+    await Children.remove(c.id);
+    if (keep) Children.select(keep);
+    await refreshChild();
+    toast(c.name + ' 아이를 지웠어요');
   }
 
   var nameMode = 'add';
@@ -241,14 +255,7 @@ var App = (function () {
       closeSheet('nameSheet');
       refreshChild();
     };
-    $('deleteChildBtn').onclick = async function () {
-      var c = Children.selected();
-      if (!c) return;
-      if (!(await ask(c.name + ' 아이와 사진을 모두 지울까요?'))) return;
-      own.forEach(function (p) { Photos.forget(p.id); });
-      await Children.remove(c.id);
-      refreshChild();
-    };
+    $('deleteChildBtn').onclick = function () { var c = Children.selected(); if (c) removeChild(c); };
   }
 
   // ---------- 사진 칸 ----------

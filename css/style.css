@@ -207,3 +207,13 @@ textarea { resize: vertical; }
 .pick { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: #fff; border: 2px solid var(--line); border-radius: 14px; font-family: "Jua", sans-serif; font-size: 16px; cursor: pointer; }
 .pick input { width: 20px; height: 20px; accent-color: var(--pink); }
 .tile .tx { position: absolute; right: 6px; bottom: 6px; background: #FF6F9A; color: #fff; border-radius: 999px; padding: 0 7px; font-size: 12px; }
+
+/* 짧은 사용법 */
+.help ul.help-steps, .help ul.help-tips { list-style: none; padding: 0; margin: 0 0 12px; display: flex; flex-direction: column; gap: 6px; }
+.help-steps li { background: #fff; border: 2px solid var(--line); border-radius: 14px; padding: 9px 12px; font-family: "Jua", sans-serif; font-size: 16px; }
+.help-tips li { font-size: 14px; padding: 2px 4px; }
+
+/* 아이 이름표의 ✕ (한 명씩 지우기) */
+.kid { display: inline-flex; align-items: center; gap: 6px; }
+.kid .kx { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; font-size: 11px; background: rgba(154,47,90,0.12); color: inherit; }
+.kid.on .kx { background: rgba(255,255,255,0.3); }
