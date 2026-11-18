@@ -227,7 +227,7 @@ textarea { resize: vertical; }
 @media (min-width: 900px) {
   .layout { grid-template-columns: 300px minmax(0, 1fr); gap: 20px; max-width: 1240px; padding: 18px 20px 0; align-items: start; }
   .panel { position: sticky; top: 18px; max-height: calc(100vh - 36px); overflow: auto; padding: 12px; }
-  .panel-logo img { width: 100%; height: auto; display: block; border-radius: 12px; }
+  .panel-logo img { width: 100%; height: auto; display: block; }
   .panel-logo { margin: -2px 0 10px; }
 }
 
