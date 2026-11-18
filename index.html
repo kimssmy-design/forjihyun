@@ -33,22 +33,17 @@
       <details class="group" open>
         <summary>🎬 영상 꾸미기</summary>
         <div class="group-body">
-          <div class="field">
-            <label for="sClass">반 이름</label>
-            <input id="sClass" type="text" placeholder="햇님반" maxlength="20">
+          <div class="field two">
+            <div><label for="sClass">반 이름</label><input id="sClass" type="text" placeholder="햇님반" maxlength="20"></div>
+            <div><label for="sFrom">보내는 사람</label><input id="sFrom" type="text" placeholder="선생님이" maxlength="20"></div>
           </div>
           <div class="field">
             <label for="sTitle">첫 장 제목</label>
             <input id="sTitle" type="text" maxlength="30">
           </div>
           <div class="field">
-            <label for="sEnd">마지막 장 문구</label>
+            <label for="sEnd">마지막 장 문구 <span class="lab-hint">{이름아} → 서아야</span></label>
             <textarea id="sEnd" rows="2" maxlength="60"></textarea>
-            <p class="hint">{이름} → 서아 · {이름아} → 서아야</p>
-          </div>
-          <div class="field">
-            <label for="sFrom">보내는 사람</label>
-            <input id="sFrom" type="text" placeholder="선생님이" maxlength="20">
           </div>
           <label class="check"><input type="checkbox" id="sDrop"> 성 빼고 부르기 (김서아 → 서아)</label>
           <div class="field two">

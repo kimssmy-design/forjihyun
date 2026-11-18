@@ -87,9 +87,9 @@ var App = (function () {
     var s = S();
     var tb = $('titleFontBtn'), bb = $('bodyFontBtn');
     tb.textContent = Fonts.label(s.titleFont);
-    tb.style.font = Fonts.css(s.titleFont, 18);
+    tb.style.font = Fonts.css(s.titleFont, 16);
     bb.textContent = Fonts.label(s.bodyFont);
-    bb.style.font = Fonts.css(s.bodyFont, 18);
+    bb.style.font = Fonts.css(s.bodyFont, 16);
   }
 
   function bindSettings() {
