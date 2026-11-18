@@ -141,8 +141,6 @@ textarea { resize: vertical; }
 .actions { display: flex; flex-direction: column; gap: 10px; margin: 6px 0 10px; }
 .row { display: flex; gap: 8px; }
 .row > * { flex: 1; }
-.pc-only { display: none; }
-@media (min-width: 900px) and (hover: hover) { .pc-only { display: inline-flex; } }
 .foot { text-align: center; color: #C9A48C; font-size: 13px; padding: 14px 0 26px; }
 
 /* 창 */
@@ -217,3 +215,62 @@ textarea { resize: vertical; }
 .kid { display: inline-flex; align-items: center; gap: 6px; }
 .kid .kx { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; font-size: 11px; background: rgba(154,47,90,0.12); color: inherit; }
 .kid.on .kx { background: rgba(255,255,255,0.3); }
+
+/* ===== 화면 배치 (PC: 왼쪽 사이드바 + 오른쪽 작업 영역 + 아래 만들기 바) ===== */
+.pc-only { display: none !important; }
+@media (min-width: 900px) {
+  .pc-only { display: revert !important; }
+  .phone-only { display: none !important; }
+}
+@media (hover: none) { #batchBtn { display: none !important; } }
+
+@media (min-width: 900px) {
+  .layout { grid-template-columns: 300px minmax(0, 1fr); gap: 20px; max-width: 1240px; padding: 18px 20px 0; align-items: start; }
+  .panel { position: sticky; top: 18px; max-height: calc(100vh - 36px); overflow: auto; padding: 12px; }
+  .panel-logo img { width: 100%; height: auto; display: block; border-radius: 12px; }
+  .panel-logo { margin: -2px 0 10px; }
+}
+
+/* 설정 묶음 (접히는 칸) */
+.group { border: 2px solid var(--line); border-radius: 14px; margin-bottom: 8px; background: #fff; }
+.group[open] { border-color: #F6B7CB; background: #FFFBFC; }
+.group > summary {
+  list-style: none; cursor: pointer; padding: 11px 14px; display: flex; justify-content: space-between; align-items: center;
+  font-family: "Jua", sans-serif; font-size: 16px; color: var(--text);
+}
+.group > summary::-webkit-details-marker { display: none; }
+.group > summary::after { content: '▾'; color: var(--sub); font-size: 13px; }
+.group[open] > summary::after { content: '▴'; }
+.group[open] > summary { color: #9A2F5A; }
+.group-body { padding: 0 14px 14px; }
+.group-body .field:last-child, .group-body .check:last-child { margin-bottom: 0; }
+.panel-foot { text-align: center; color: #C9A48C; font-size: 12.5px; margin: 10px 0 2px; }
+
+/* 오른쪽 위 안내 줄 */
+.main-top { display: flex; gap: 10px; align-items: center; margin-bottom: 14px; }
+.main-top .safe { flex: 1; margin: 0; }
+
+/* 아이 사진 | 공통 사진 나란히 */
+.photo-cols { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+.photo-cols .card { margin-bottom: 0; }
+.common .sub { margin-bottom: 8px; }
+.common .hint.warn { margin: 0 0 10px; }
+
+/* 아래에 붙어 있는 만들기 바 */
+.make-bar {
+  position: sticky; bottom: 0; z-index: 15; margin-top: 16px;
+  display: flex; gap: 8px; align-items: center;
+  padding: 12px 0 calc(14px + env(safe-area-inset-bottom));
+  background: var(--bg); border-top: 2px dashed var(--line);
+}
+.make-bar .est { flex: 1; margin: 0; color: var(--sub); font-size: 14px; }
+.make-bar .btn { white-space: nowrap; }
+.make-bar .primary { width: auto; padding: 13px 28px; font-size: 19px; white-space: nowrap; }
+
+@media (max-width: 899px) {
+  .photo-cols { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .make-bar { flex-wrap: wrap; padding-left: 0; padding-right: 0; }
+  .make-bar .est { flex-basis: 100%; text-align: center; font-size: 13px; }
+  .make-bar .primary { flex: 1; padding: 13px 14px; font-size: 17px; }
+  .foot { padding: 14px 0 4px; }
+}

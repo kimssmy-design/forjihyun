@@ -610,7 +610,14 @@ var App = (function () {
         if (e.target === sh && sh.id !== 'resultSheet') closeSheet(sh.id);
       });
     });
-    $('helpBtn').onclick = function () { openSheet('helpSheet'); };
+    document.querySelectorAll('.help-open').forEach(function (b) { b.onclick = function () { openSheet('helpSheet'); }; });
+    // 설정 묶음은 한 번에 하나만 펼쳐요
+    var groups = document.querySelectorAll('details.group');
+    groups.forEach(function (g) {
+      g.addEventListener('toggle', function () {
+        if (g.open) groups.forEach(function (o) { if (o !== g) o.open = false; });
+      });
+    });
     $('makeBtn').onclick = onMake;
     $('previewBtn').onclick = onPreview;
     $('batchBtn').onclick = onBatch;

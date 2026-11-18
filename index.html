@@ -12,9 +12,10 @@
 </head>
 <body>
 
-<header class="top">
+<!-- 폰: 위 가운데 로고 -->
+<header class="top phone-only">
   <h1 class="logo"><img src="img/logo.webp" alt="포영포영 - 포토 영상 만들기" width="900" height="501"></h1>
-  <button type="button" id="helpBtn" class="chip help-btn">? 사용법</button>
+  <button type="button" class="chip help-btn help-open">? 사용법</button>
 </header>
 
 <div id="inappBanner" class="banner" hidden>
@@ -23,83 +24,103 @@
 </div>
 
 <div class="layout">
+  <!-- 왼쪽 사이드바: 로고 + 접히는 설정 묶음 -->
   <aside class="panel" id="panel">
+    <div class="panel-logo pc-only"><img src="img/logo.webp" alt="포영포영 - 포토 영상 만들기" width="900" height="501"></div>
     <button type="button" class="panel-toggle" id="panelToggle"><span>⚙ 설정</span><span class="caret">▾</span></button>
     <div class="panel-body">
-      <div class="field">
-        <label for="sClass">반 이름</label>
-        <input id="sClass" type="text" placeholder="햇님반" maxlength="20">
-      </div>
-      <div class="field">
-        <label for="sTitle">첫 장 제목</label>
-        <input id="sTitle" type="text" maxlength="30">
-        <p class="hint">{이름} 자리에 아이 이름이 들어가요</p>
-      </div>
-      <div class="field">
-        <label for="sEnd">마지막 장 문구</label>
-        <textarea id="sEnd" rows="2" maxlength="60"></textarea>
-        <p class="hint">{이름아}는 '서아야', '하늘아'처럼 바뀌어요</p>
-      </div>
-      <div class="field">
-        <label for="sFrom">보내는 사람</label>
-        <input id="sFrom" type="text" placeholder="선생님이" maxlength="20">
-      </div>
-      <label class="check"><input type="checkbox" id="sDrop"> 성 빼고 부르기 (김서아 → 서아)</label>
 
-      <div class="field two">
-        <div><label>제목 글꼴</label><button type="button" id="titleFontBtn" class="font-btn"></button></div>
-        <div><label>본문 글꼴</label><button type="button" id="bodyFontBtn" class="font-btn"></button></div>
-      </div>
-
-      <div class="field">
-        <label>프레임</label>
-        <div class="seg" id="themeSeg"></div>
-      </div>
-      <div class="field">
-        <label>사진 순서</label>
-        <div class="seg" id="orderSeg"></div>
-        <p class="hint" id="orderHint"></p>
-        <button type="button" id="reshuffleBtn" class="btn small">다시 섞기</button>
-      </div>
-      <label class="check" id="seasonRow"><input type="checkbox" id="sSeason"> 계절 장 넣기 (봄·여름·가을·겨울)</label>
-      <label class="check"><input type="checkbox" id="sCaps"> 사진마다 응원 문구 넣기</label>
-      <details class="caps">
-        <summary>응원 문구 고치기</summary>
-        <textarea id="capsText" rows="8"></textarea>
-        <p class="hint">한 줄에 하나씩 써요. 사진이 바뀔 때마다 돌아가며 나와요.<br>{이름} → 서아·하늘, {이름이} → 서아·하늘이, {이름아} → 서아야·하늘아</p>
-        <button type="button" id="capsReset" class="btn small">기본 문구로 되돌리기</button>
+      <details class="group" open>
+        <summary>🎬 영상 꾸미기</summary>
+        <div class="group-body">
+          <div class="field">
+            <label for="sClass">반 이름</label>
+            <input id="sClass" type="text" placeholder="햇님반" maxlength="20">
+          </div>
+          <div class="field">
+            <label for="sTitle">첫 장 제목</label>
+            <input id="sTitle" type="text" maxlength="30">
+          </div>
+          <div class="field">
+            <label for="sEnd">마지막 장 문구</label>
+            <textarea id="sEnd" rows="2" maxlength="60"></textarea>
+            <p class="hint">{이름} → 서아 · {이름아} → 서아야</p>
+          </div>
+          <div class="field">
+            <label for="sFrom">보내는 사람</label>
+            <input id="sFrom" type="text" placeholder="선생님이" maxlength="20">
+          </div>
+          <label class="check"><input type="checkbox" id="sDrop"> 성 빼고 부르기 (김서아 → 서아)</label>
+          <div class="field two">
+            <div><label>제목 글꼴</label><button type="button" id="titleFontBtn" class="font-btn"></button></div>
+            <div><label>본문 글꼴</label><button type="button" id="bodyFontBtn" class="font-btn"></button></div>
+          </div>
+          <div class="field">
+            <label>프레임</label>
+            <div class="seg" id="themeSeg"></div>
+          </div>
+        </div>
       </details>
-      <label class="check"><input type="checkbox" id="sPersonal"> 아이별 한마디 쓰기 (마지막 장)</label>
-      <label class="check"><input type="checkbox" id="sPhotoText"> 사진별 글 쓰기 (사진을 눌러서)</label>
 
-      <div class="field">
-        <label>사진 한 장 시간</label>
-        <div class="seg" id="secSeg"></div>
-      </div>
-
-      <div class="field">
-        <label>배경음악</label>
-        <div class="seg" id="musicSeg"></div>
-        <div class="music-row">
-          <label class="btn small">음악 파일 넣기<input type="file" id="musicFile" accept="audio/*" hidden></label>
-          <button type="button" id="musicTry" class="btn small">들어보기</button>
+      <details class="group">
+        <summary>🖼 사진 순서·문구</summary>
+        <div class="group-body">
+          <div class="field">
+            <label>사진 순서</label>
+            <div class="seg" id="orderSeg"></div>
+            <p class="hint" id="orderHint"></p>
+            <button type="button" id="reshuffleBtn" class="btn small">다시 섞기</button>
+          </div>
+          <div class="field">
+            <label>사진 한 장 시간</label>
+            <div class="seg" id="secSeg"></div>
+          </div>
+          <label class="check" id="seasonRow"><input type="checkbox" id="sSeason"> 계절 장 넣기 (봄·여름·가을·겨울)</label>
+          <label class="check"><input type="checkbox" id="sCaps"> 사진마다 응원 문구 넣기</label>
+          <details class="caps">
+            <summary>응원 문구 고치기</summary>
+            <textarea id="capsText" rows="8"></textarea>
+            <p class="hint">한 줄에 하나씩 · {이름} {이름이} {이름아} 쓸 수 있어요</p>
+            <button type="button" id="capsReset" class="btn small">기본 문구로 되돌리기</button>
+          </details>
+          <label class="check"><input type="checkbox" id="sPersonal"> 아이별 한마디 쓰기 (마지막 장)</label>
+          <label class="check"><input type="checkbox" id="sPhotoText"> 사진별 글 쓰기 (사진을 눌러서)</label>
         </div>
-        <p class="hint" id="musicName"></p>
-      </div>
+      </details>
 
-      <div class="field backup">
-        <label>작업 옮기기·백업</label>
-        <div class="row">
-          <button type="button" id="backupSaveBtn" class="btn small">작업 저장하기</button>
-          <label class="btn small">작업 불러오기<input type="file" id="backupFile" hidden></label>
+      <details class="group">
+        <summary>🎵 배경음악</summary>
+        <div class="group-body">
+          <div class="seg" id="musicSeg"></div>
+          <div class="music-row">
+            <label class="btn small">음악 파일 넣기<input type="file" id="musicFile" accept="audio/*" hidden></label>
+            <button type="button" id="musicTry" class="btn small">들어보기</button>
+          </div>
+          <p class="hint" id="musicName"></p>
         </div>
-        <p class="hint">사진·설정을 파일 하나로 저장해요. 다른 PC나 폰에서 불러오면 이어서 할 수 있어요.</p>
-      </div>
+      </details>
+
+      <details class="group">
+        <summary>🗂 작업 저장·불러오기</summary>
+        <div class="group-body">
+          <div class="row">
+            <button type="button" id="backupSaveBtn" class="btn small">작업 저장하기</button>
+            <label class="btn small">작업 불러오기<input type="file" id="backupFile" hidden></label>
+          </div>
+          <p class="hint">파일 하나로 저장 → 다른 기기에서 불러와 이어 하기</p>
+        </div>
+      </details>
+
+      <p class="panel-foot pc-only">made by 다나맘</p>
     </div>
   </aside>
 
+  <!-- 오른쪽: 아이 목록, 사진 -->
   <main class="main">
-    <p class="safe">🔒 사진은 이 기기 안에서만 처리돼요 · 자동 저장돼요</p>
+    <div class="main-top">
+      <p class="safe">🔒 사진은 이 기기 안에서만 처리돼요 · 자동 저장돼요</p>
+      <button type="button" class="chip pc-only help-open">? 사용법</button>
+    </div>
 
     <section class="card">
       <div class="sec-head">
@@ -112,43 +133,44 @@
       <div id="childChips" class="chips"></div>
     </section>
 
-    <section class="card" id="childSection">
-      <div class="sec-head">
-        <h2 id="childTitle"></h2>
-        <div class="sec-tools">
-          <button type="button" id="renameBtn" class="link">이름 바꾸기</button>
-          <button type="button" id="deleteChildBtn" class="link danger">삭제</button>
+    <div class="photo-cols">
+      <section class="card" id="childSection">
+        <div class="sec-head">
+          <h2 id="childTitle"></h2>
+          <div class="sec-tools">
+            <button type="button" id="renameBtn" class="link">이름 바꾸기</button>
+            <button type="button" id="deleteChildBtn" class="link danger">삭제</button>
+          </div>
         </div>
-      </div>
-      <p class="sub" id="childSub"></p>
-      <label class="check small"><input type="checkbox" id="noCommon"> 이 아이는 공통 사진 빼기</label>
-      <div class="msg-box" id="msgBox" hidden>
-        <label for="childMsg">한마디 (마지막 장)</label>
-        <textarea id="childMsg" rows="2" maxlength="60"></textarea>
-        <p class="hint">비워 두면 공통 문구가 들어가요</p>
-      </div>
-      <div id="ownGrid" class="grid"></div>
-    </section>
+        <p class="sub" id="childSub"></p>
+        <label class="check small"><input type="checkbox" id="noCommon"> 이 아이는 공통 사진 빼기</label>
+        <div class="msg-box" id="msgBox" hidden>
+          <label for="childMsg">한마디 (마지막 장)</label>
+          <textarea id="childMsg" rows="2" maxlength="60"></textarea>
+          <p class="hint">비워 두면 공통 문구가 들어가요</p>
+        </div>
+        <div id="ownGrid" class="grid"></div>
+      </section>
 
-    <section class="card common">
-      <div class="sec-head">
-        <h2>공통 사진</h2>
-        <span class="sub">모든 아이 영상에 들어가요</span>
-      </div>
-      <p class="hint warn">다른 아이 얼굴이 나오는 사진은 원의 초상권 동의 범위를 확인해 주세요. 아이별로 '공통 사진 빼기'를 할 수 있어요.</p>
-      <div id="commonGrid" class="grid"></div>
-    </section>
-
-    <div class="actions">
-      <button type="button" id="makeBtn" class="primary big">✨ 영상 만들기</button>
-      <p class="sub center est" id="estText"></p>
-      <div class="row">
-        <button type="button" id="previewBtn" class="btn">▶ 미리보기</button>
-        <button type="button" id="batchBtn" class="btn pc-only">남은 아이 모두 만들기</button>
-      </div>
+      <section class="card common">
+        <div class="sec-head">
+          <h2>공통 사진</h2>
+        </div>
+        <p class="sub">모든 아이 영상에 들어가요</p>
+        <p class="hint warn">🙈 다른 아이 얼굴은 원의 동의 범위를 확인해 주세요</p>
+        <div id="commonGrid" class="grid"></div>
+      </section>
     </div>
 
-    <footer class="foot">made by 다나맘</footer>
+    <footer class="foot phone-only">made by 다나맘</footer>
+
+    <!-- 화면 아래에 늘 붙어 있는 만들기 바 -->
+    <div class="make-bar">
+      <p class="est" id="estText"></p>
+      <button type="button" id="previewBtn" class="btn">▶ 미리보기</button>
+      <button type="button" id="batchBtn" class="btn pc-only">반 전체 만들기</button>
+      <button type="button" id="makeBtn" class="primary">✨ 영상 만들기</button>
+    </div>
   </main>
 </div>
 
